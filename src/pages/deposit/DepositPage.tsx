@@ -34,9 +34,11 @@ interface WalletInfo {
 const depositSchema = z.object({
   currency: z.string().min(1, 'Please select a cryptocurrency'),
   network: z.string().min(1, 'Please select a network'),
-  amount: z.number().min(1, 'Amount must be at least 1'),
+  amount: z.number({
+  error: "Amount is required",
+}).min(100, "Minimum deposit is $100"),
   txHash: z.string().min(10, 'Transaction hash is required'),
-});
+}); 
 
 type DepositFormData = z.infer<typeof depositSchema>;
 
@@ -70,10 +72,11 @@ const DepositPage = () => {
   const [wallets, setWallets] = useState<WalletInfo[]>([]);
   const toast = useToast();
 
-  const {
+    const {
     register,
     handleSubmit,
     watch,
+    trigger,
     formState: { errors },
   } = useForm<DepositFormData>({
     resolver: zodResolver(depositSchema),
@@ -149,7 +152,19 @@ const DepositPage = () => {
     }
   };
 
-  const nextStep = () => {
+    const nextStep = async () => {
+    // Validate current step before proceeding - shows errors visibly
+    let fieldsToValidate: (keyof DepositFormData)[] = [];
+    if (currentStep === 1) fieldsToValidate = ['currency'];
+    if (currentStep === 2) fieldsToValidate = ['network'];
+    if (currentStep === 3) fieldsToValidate = ['amount', 'txHash'];
+    if (fieldsToValidate.length > 0) {
+      const isValid = await trigger(fieldsToValidate);
+      if (!isValid) {
+        toast.error('Please complete all required fields');
+        return;
+      }
+    }
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
     }
@@ -393,7 +408,7 @@ const DepositPage = () => {
                               </>
                             )}
                           </button>
-                        </div>
+                        </div> 
                         <p className="font-mono text-sm text-[#1c1917] break-all bg-white p-3 rounded-lg border border-[#d6d3d1]">
                           {walletAddress}
                         </p>
@@ -406,6 +421,14 @@ const DepositPage = () => {
                         </div>
                       </div>
 
+                                            <Input
+                        label="Amount (USD)"
+                        type="number"
+                        placeholder="Enter deposit amount (e.g. 500)"
+                        helperText="Minimum deposit is $100"
+                        error={errors.amount?.message}
+                        {...register('amount', { valueAsNumber: true })}
+                      />
                       <Input
                         label="Transaction Hash (TxHash)"
                         placeholder="Enter your transaction hash"
@@ -433,7 +456,13 @@ const DepositPage = () => {
                         Review your deposit details before submitting
                       </p>
 
-                      <div className="space-y-4 bg-[#f5f5f4] p-6 rounded-xl">
+                                            <div className="space-y-4 bg-[#f5f5f4] p-6 rounded-xl">
+                        <div className="flex justify-between">
+                          <span className="text-[#78716c]">Amount</span>
+                          <span className="font-semibold text-[#1c1917]">
+                            ${Number(watch('amount') || 0).toLocaleString()}
+                          </span>
+                        </div>
                         <div className="flex justify-between">
                           <span className="text-[#78716c]">Cryptocurrency</span>
                           <span className="font-medium text-[#1c1917]">
@@ -455,7 +484,7 @@ const DepositPage = () => {
                         <div className="flex justify-between">
                           <span className="text-[#78716c]">Transaction Hash</span>
                           <span className="font-mono text-sm text-[#1c1917]">
-                            {watch('txHash').slice(0, 12)}...
+                                                       {(watch('txHash') || '').slice(0, 12)}...
                           </span>
                         </div>
                       </div>

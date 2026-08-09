@@ -131,12 +131,7 @@ const AdminLoginPage = () => {
               Sign In to Admin
             </Button>
           </form>
-
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800 font-medium mb-1">Demo Admin Credentials:</p>
-            <p className="text-sm text-blue-700">Email: admin@nexora.com</p>
-            <p className="text-sm text-blue-700">Password: admin123</p>
-          </div>
+          
         </div>
       </motion.div>
     </div>
